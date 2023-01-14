@@ -38,6 +38,67 @@ app()->group('/auth', function () {
 			'data' => $user
 		], 201);
 	});
+	
+	app()->post('/registerWithOtp', function () {
+		$generatedCode = rand(1000, 9999);
+		$credentials = request()->get(['username', 'email', 'password']);
+		$user = auth()->register($credentials, ['username', 'email']);
+
+		if (!$user) {
+			response()->exit([
+				'status' => 'error',
+				'data' => auth()->errors()
+			], 401);
+		}
+
+		// Send generatedCode to user's email or something
+		// ... if successful then save otp
+		db()
+			->insert('otps')
+			->params([
+				'user_id' => $user['id'],
+				'code' => $generatedCode
+			])
+			->execute();
+
+		response()->json([
+			'status' => 'success',
+			'data' => $user
+		], 201);
+	});
+
+	app()->post('/verifyOtp', function () {
+		$user = auth()->user();
+
+		if (!$user) {
+			response()->exit([
+				'status' => 'error',
+				'data' => auth()->errors(),
+			], 401);
+		}
+
+		$otp = db()
+			->select('otps')
+			->where('user_id', $user['id'])
+			->first();
+
+		if ($otp !== request()->get('otp')) {
+			response()->exit([
+				'status' => 'error',
+				'data' => 'Invalid OTP'
+			], 401);
+		}
+
+		db()
+			->delete('otps')
+			->where('user_id', $user['id'])
+			->execute();
+
+		response()->json([
+			'status' => 'success',
+			'data' => 'OTP verified'
+		], 201);
+	});
 });
 
 app()->run();
