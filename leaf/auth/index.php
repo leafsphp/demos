@@ -40,6 +40,8 @@ app()->group('/auth', function () {
 	});
 	
 	app()->post('/registerWithOtp', function () {
+		auth()->config('HIDE_ID', false);
+
 		$generatedCode = rand(1000, 9999);
 		$credentials = request()->get(['username', 'email', 'password']);
 		$user = auth()->register($credentials, ['username', 'email']);
@@ -56,14 +58,17 @@ app()->group('/auth', function () {
 		db()
 			->insert('otps')
 			->params([
-				'user_id' => $user['id'],
+				'user_id' => $user['user']['id'],
 				'code' => $generatedCode
 			])
 			->execute();
 
 		response()->json([
 			'status' => 'success',
-			'data' => $user
+			'data' => array_merge($user, [
+				// this should not be sent in the response
+				'otp' => $generatedCode
+			])
 		], 201);
 	});
 
