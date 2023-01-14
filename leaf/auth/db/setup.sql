@@ -17,5 +17,5 @@ CREATE TABLE otps (
     created_at timestamp NOT NULL DEFAULT now(),
     updated_at timestamp NOT NULL DEFAULT now(),
     FOREIGN KEY (user_id)
-      REFERENCES users (user_id)
+      REFERENCES users (id)
 );
